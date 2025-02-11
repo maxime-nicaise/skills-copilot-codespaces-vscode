@@ -1,37 +1,71 @@
 //create web server
+const express = require('express');
+const router = express.Router();
+const Comment = require('../models/comment');
+const Post = require('../models/post');
+const User = require('../models/user');
+const jwt = require('jsonwebtoken');
+const config = require('../config/database');
 
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var fs = require('fs');
+//add comment
+router.post('/add', (req, res, next) => {
+    let newComment = new Comment({
+        content: req.body.content,
+        post: req.body.post,
+        user: req.body.user
+    });
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-//create a server
-app.listen(3000, function(){
-    console.log('Server is running on http://localhost:3000');
-});
-
-// create a route
-app.get('/', function(req, res){
-    res.sendFile(__dirname + '/index.html');
-});
-
-app.get('/comments', function(req, res){
-    fs.readFile(__dirname + '/comments.json', function(err, data){
-        res.setHeader('Content-Type', 'application/json');
-        res.send(data);
+    Comment.addComment(newComment, (err, comment) => {
+        if (err) {
+            res.json({ success: false, msg: 'Failed to add comment' });
+        } else {
+            res.json({ success: true, msg: 'Comment added' });
+        }
     });
 });
 
-app.post('/comments', function(req, res){
-    fs.readFile(__dirname + '/comments.json', function(err, data){
-        var comments = JSON.parse(data);
-        comments.push(req.body);
-        fs.writeFile(__dirname + '/comments.json', JSON.stringify(comments, null, 4), function(err){
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(comments, null, 4));
-        });
+//get comments by post id
+router.get('/post/:id', (req, res, next) => {
+    Comment.getCommentsByPostId(req.params.id, (err, comments) => {
+        if (err) {
+            res.json({ success: false, msg: 'Failed to get comments' });
+        } else {
+            res.json({ success: true, comments: comments });
+        }
     });
 });
+
+//get comments by user id
+router.get('/user/:id', (req, res, next) => {
+    Comment.getCommentsByUserId(req.params.id, (err, comments) => {
+        if (err) {
+            res.json({ success: false, msg: 'Failed to get comments' });
+        } else {
+            res.json({ success: true, comments: comments });
+        }
+    });
+});
+
+//get all comments
+router.get('/all', (req, res, next) => {
+    Comment.getAllComments((err, comments) => {
+        if (err) {
+            res.json({ success: false, msg: 'Failed to get comments' });
+        } else {
+            res.json({ success: true, comments: comments });
+        }
+    });
+});
+
+//delete comment
+router.delete('/delete/:id', (req, res, next) => {
+    Comment.deleteComment(req.params.id, (err, comment) => {
+        if (err) {
+            res.json({ success: false, msg: 'Failed to delete comment' });
+        } else {
+            res.json({ success: true, msg: 'Comment deleted' });
+        }
+    });
+});
+
+module.exports = router;
