@@ -1,35 +1,37 @@
 //create web server
+
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var path = require('path');
 
-var COMMENTS_FILE = path.join(__dirname, 'comments.json');
-
-app.set('port', (process.env.PORT || 3000));
-
-app.use('/', express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/api/comments', function(req, res) {
-  fs.readFile(COMMENTS_FILE, function(err, data) {
-    if(err) {
-      console.error(err);
-      process.exit(1);
-    }
-    res.json(JSON.parse(data));
-  });
+//create a server
+app.listen(3000, function(){
+    console.log('Server is running on http://localhost:3000');
 });
 
-app.post('/api/comments', function(req, res) {
-  fs.readFile(COMMENTS_FILE, function(err, data) {
-    if(err) {
-      console.error(err);
-      process.exit(1);
-    }
-    var comments = JSON.parse(data);
-    var newComment = {}
+// create a route
+app.get('/', function(req, res){
+    res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/comments', function(req, res){
+    fs.readFile(__dirname + '/comments.json', function(err, data){
+        res.setHeader('Content-Type', 'application/json');
+        res.send(data);
+    });
+});
+
+app.post('/comments', function(req, res){
+    fs.readFile(__dirname + '/comments.json', function(err, data){
+        var comments = JSON.parse(data);
+        comments.push(req.body);
+        fs.writeFile(__dirname + '/comments.json', JSON.stringify(comments, null, 4), function(err){
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(comments, null, 4));
+        });
     });
 });
